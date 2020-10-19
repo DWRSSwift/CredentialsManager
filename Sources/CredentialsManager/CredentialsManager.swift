@@ -17,10 +17,27 @@ struct GenericCredentials: Credentials {
 }
 
 public enum KeychainError: Error {
-    case noPassword
+    case readOnly
+    case authFailed
+    case itemNotFound
     case duplicateItem
     case unexpectedPasswordData
     case unhandledError(status: OSStatus)
+    
+    init(from status: OSStatus) {
+        switch status {
+        case errSecReadOnly:
+            self = KeychainError.readOnly
+        case errSecAuthFailed:
+            self = KeychainError.authFailed
+        case errSecItemNotFound:
+            self = .itemNotFound
+        case errSecDuplicateItem:
+            self = KeychainError.duplicateItem
+        default:
+            self = KeychainError.unhandledError(status: status)
+        }
+    }
 }
 
 public struct CredentialsManager {
@@ -31,8 +48,9 @@ public struct CredentialsManager {
                                     kSecAttrServer as String: server,
                                     kSecValueData as String: secretData]
         let status = SecItemAdd(query as CFDictionary, nil)
-        guard status != errSecDuplicateItem else { throw KeychainError.duplicateItem }
-        guard status == errSecSuccess else { throw KeychainError.unhandledError(status: status) }
+        guard status == errSecSuccess else {
+            throw KeychainError(from: status)
+        }
     }
     
     public static func findCredential(for server: String) throws -> Credentials {
@@ -43,9 +61,8 @@ public struct CredentialsManager {
                                     kSecReturnData as String: true]
         var item: CFTypeRef?
         let status = SecItemCopyMatching(query as CFDictionary, &item)
-        guard status != errSecItemNotFound else { throw KeychainError.noPassword }
         guard status == errSecSuccess else {
-            throw KeychainError.unhandledError(status: status)
+            throw KeychainError(from: status)
         }
         
         guard let existingItem = item as? [String : Any],
@@ -65,15 +82,14 @@ public struct CredentialsManager {
         let attributes: [String: Any] = [kSecAttrAccount as String: username,
                                          kSecValueData as String: apiKeyData]
         let status = SecItemUpdate(query as CFDictionary, attributes as CFDictionary)
-        guard status != errSecItemNotFound else { throw KeychainError.noPassword }
-        guard status == errSecSuccess else { throw KeychainError.unhandledError(status: status) }
+        guard status == errSecSuccess else { throw KeychainError(from: status) }
     }
 
     public static func deleteCredential(for server: String) throws {
         let query: [String: Any] = [kSecClass as String: kSecClassInternetPassword,
                                     kSecAttrServer as String: server]
         let status = SecItemDelete(query as CFDictionary)
-        guard status == errSecSuccess || status == errSecItemNotFound else { throw KeychainError.unhandledError(status: status) }
+        guard status == errSecSuccess || status == errSecItemNotFound else { throw KeychainError(from: status) }
     }
     
     public static func upsertCredential(for server: String, username: String, secret: String) throws -> UpsertResult {

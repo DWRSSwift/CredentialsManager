@@ -13,6 +13,8 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - uses: fwal/setup-swift@v1
+      with:
+        swift-version: "5.3.0"
     - name: Build
       run: swift build -v
     - name: Run tests
@@ -24,6 +26,8 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - uses: fwal/setup-swift@v1
+      with:
+        swift-version: "5.3.0"
     - name: Build
       run: swift build -v
     - name: Run tests

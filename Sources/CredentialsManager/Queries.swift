@@ -18,7 +18,7 @@ func add(_ credentials: Credentials, synchronise: Bool) throws {
     }
     if synchronise {
         query.updateValue(true, forKey: kSecAttrSynchronizable as KSecConstant)
-    } else if #available(iOS 13.0, *) {
+    } else if #available(iOS 13.0, OSX 10.15, tvOS 13.0, watchOS 6.0, *) {
         query.updateValue(true, forKey: kSecUseDataProtectionKeychain as KSecConstant)
     }
     let status = SecItemAdd(query as CFDictionary, nil)

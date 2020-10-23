@@ -18,8 +18,6 @@ func add(_ credentials: Credentials, synchronise: Bool) throws {
     }
     if synchronise {
         query.updateValue(true, forKey: kSecAttrSynchronizable as KSecConstant)
-    } else if #available(iOS 13.0, OSX 10.15, tvOS 13.0, watchOS 6.0, *) {
-        query.updateValue(true, forKey: kSecUseDataProtectionKeychain as KSecConstant)
     }
     let status = SecItemAdd(query as CFDictionary, nil)
     guard status == errSecSuccess else {
@@ -42,7 +40,7 @@ func find(forServer server: String) throws -> Credentials {
 
 func find(forUsername username: String) throws -> String {
     let query: [KSecConstant: Any] = [.secClass: kSecClassGenericPassword,
-                                      .attrAccount as String: username]
+                                      .attrAccount: username]
     
     return try find(query: query).1
 }

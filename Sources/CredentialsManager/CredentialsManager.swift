@@ -55,6 +55,7 @@ public struct CredentialsManager {
         }
     }
     
+    @discardableResult
     public static func upsertToken(for key: String, secret: String) throws -> UpsertResult {
         do {
             try Self.addToken(for: key, secret: secret)
